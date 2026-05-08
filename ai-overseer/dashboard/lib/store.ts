@@ -128,6 +128,20 @@ export const useStore = create<Store>((set) => ({
             diffSummary: e.diff_summary,
           };
           break;
+        // New event types from the multi-project / autonomy / watcher
+        // upgrade. UI handling lands in a follow-up; for now we just
+        // accept them so the WS stream stays exhaustively switched.
+        case "project_registered":
+        case "circuit_state_changed":
+        case "budget_exceeded":
+        case "retry_scheduled":
+        case "verification_started":
+        case "verification_finished":
+        case "watcher_registered":
+        case "watcher_fired":
+        case "conversation_turn":
+        case "memory_written":
+          break;
       }
       return { agents: { ...s.agents, [id]: next } };
     }),

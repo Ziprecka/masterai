@@ -46,6 +46,8 @@ class AgentSpec:
     task: str
     task_slug: str
     role: str = "implementer"  # or "reviewer", "researcher", "test-writer"
+    project_id: str | None = None
+    identity_prefix: str | None = None
     allowed_tools: list[str] = field(default_factory=lambda: [
         "Read", "Write", "Edit", "Glob", "Grep", "Bash", "Agent",
     ])
@@ -88,6 +90,7 @@ class Agent:
             task=self.spec.task,
             worktree_path=str(self.worktree.path),
             branch=self.worktree.branch,
+            project_id=self.spec.project_id,
         ))
         self._task = asyncio.create_task(self._run())
 
@@ -124,6 +127,18 @@ class Agent:
             for name, cfg in SUBAGENTS.items()
         }
 
+        base_prompt = (
+            f"You are agent `{self.spec.agent_id}` working on branch "
+            f"`{self.worktree.branch}` inside an isolated git worktree. "
+            "Make focused, minimal changes that satisfy the task. "
+            "Run tests if a test command is obvious. "
+            "Do NOT push, do NOT touch git history beyond local commits."
+        )
+        if self.spec.identity_prefix:
+            system_prompt = self.spec.identity_prefix + "\n\n" + base_prompt
+        else:
+            system_prompt = base_prompt
+
         options = ClaudeAgentOptions(
             cwd=str(self.worktree.path),
             allowed_tools=self.spec.allowed_tools,
@@ -131,13 +146,7 @@ class Agent:
             max_turns=self.spec.max_turns,
             agents=agents,
             hooks=make_hooks(self.spec.agent_id),
-            system_prompt=(
-                f"You are agent `{self.spec.agent_id}` working on branch "
-                f"`{self.worktree.branch}` inside an isolated git worktree. "
-                "Make focused, minimal changes that satisfy the task. "
-                "Run tests if a test command is obvious. "
-                "Do NOT push, do NOT touch git history beyond local commits."
-            ),
+            system_prompt=system_prompt,
         )
 
         final_text = ""
@@ -171,6 +180,7 @@ class Agent:
             agent_id=self.spec.agent_id,
             final_message=final_text,
             diff_summary=diff_summary,
+            project_id=self.spec.project_id,
         ))
         await bus.publish(AgentStatusChanged(
             agent_id=self.spec.agent_id, status=AgentStatus.REVIEWING,
