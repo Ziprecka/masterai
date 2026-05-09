@@ -45,7 +45,7 @@ python -m overseer.main
 
 # 4. Run the dashboard (separate terminal)
 cd dashboard && npm run dev
-# Open http://localhost:3000
+# Open http://localhost:3003
 ```
 
 ## Layout

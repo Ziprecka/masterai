@@ -131,7 +131,7 @@ app = FastAPI(lifespan=lifespan, title="AI Overseer")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3003", "http://127.0.0.1:3003"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
